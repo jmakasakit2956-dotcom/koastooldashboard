@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fansly Tool</title>
+    <title>Agency Dashboard</title>
+    <link rel="icon" type="image/png" href="fansly.png">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -101,7 +102,8 @@
             FileText,
             StickyNote,
             PenLine,
-            Link as LinkIcon
+            Link as LinkIcon,
+            RotateCcw
         } from 'lucide-react';
 
         // --- Constants ---
@@ -184,6 +186,17 @@
             }));
         }, [setModels]);
 
+        const resetTally = useCallback((id) => {
+            if (confirm('Are you sure you want to reset all tallies for this model?')) {
+                setModels(prev => prev.map(m => {
+                    if (m.id === id) {
+                        return { ...m, tallyMM: 0, tallyWM: 0, tallyStory: 0 };
+                    }
+                    return m;
+                }));
+            }
+        }, [setModels]);
+
         const updateSalesText = useCallback((id, text) => {
             setModels(prev => prev.map(m => {
             if (m.id === id) {
@@ -219,10 +232,10 @@
             <div className="flex flex-col h-full bg-[#0a0a0c] p-8 lg:p-12 overflow-y-auto">
             <div className="max-w-7xl w-full mx-auto h-full flex flex-col">
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 min-h-0">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 flex-1 min-h-0">
                 
                 {/* Tally Count Section */}
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full min-w-0">
                     <div className="flex items-center gap-3 mb-6">
                     <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.1)]">
                         <MessageSquare size={18} />
@@ -238,31 +251,31 @@
                         <p className="text-xs text-slate-600 mt-1">Configure talent in Settings to view data.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-4">
+                        <div className="flex flex-col gap-6 pb-4">
                         {models.map((model) => (
                             <div 
                             key={model.id} 
-                            className="bg-[#121214] border border-white/5 hover:border-purple-500/20 rounded-3xl p-6 relative group transition-all duration-300 shadow-sm hover:shadow-2xl hover:shadow-purple-900/10"
+                            className="bg-[#121214] border border-white/5 hover:border-purple-500/20 rounded-3xl p-6 relative group transition-all duration-300 shadow-sm hover:shadow-2xl hover:shadow-purple-900/10 h-[400px] flex flex-col"
                             >
-                            <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center justify-between mb-6 shrink-0">
                                 <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center text-purple-300 border border-white/5 shadow-inner">
                                     <User size={24} />
                                 </div>
                                 <div>
                                     <h4 className="text-white text-xl font-light tracking-wide">{model.name}</h4>
-                                    <div className="flex items-center gap-2 mt-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">{model.category}</p>
-                                    </div>
                                 </div>
                                 </div>
-                                <div className="text-[10px] bg-white/5 px-2 py-1 rounded-lg text-slate-500 border border-white/5 font-mono">
-                                ID: {model.id.toString().slice(-4)}
-                                </div>
+                                <button 
+                                    onClick={() => resetTally(model.id)}
+                                    className="p-2 text-slate-500 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 transition-colors"
+                                    title="Reset Tally"
+                                >
+                                    <RotateCcw size={14} />
+                                </button>
                             </div>
                             
-                            <div className="space-y-1 bg-[#0a0a0c]/50 rounded-2xl p-4 border border-white/5">
+                            <div className="space-y-1 bg-[#0a0a0c]/50 rounded-2xl p-4 border border-white/5 flex-1 flex flex-col justify-center">
                                 <TallyRow 
                                     label="MM Reply" 
                                     count={model.tallyMM || 0} 
@@ -293,7 +306,7 @@
                 </div>
 
                 {/* Sales Count Section */}
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full min-w-0">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
                         <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
@@ -323,7 +336,7 @@
                             <p className="text-xs text-slate-600 mt-1">Add models to enable sales tracking.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-4">
+                        <div className="flex flex-col gap-6 pb-4">
                             {models.map((model) => {
                             const modelTotal = calculateModelTotal(model.salesText);
                             const modelNet = modelTotal * 0.8;
@@ -333,7 +346,7 @@
                                 className="bg-[#121214] border border-white/5 hover:border-emerald-500/20 rounded-3xl p-6 relative group transition-all duration-300 shadow-sm hover:shadow-2xl hover:shadow-emerald-900/10 flex flex-col h-[400px]"
                                 >
                                 {/* Header */}
-                                <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center justify-between mb-4 shrink-0">
                                     <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center text-emerald-300 border border-white/5">
                                         <DollarSign size={18} />
