@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agency Dashboard</title>
+    <title>Fansly Tool</title>
     <link rel="icon" type="image/png" href="fansly.png">
     
     <!-- Fonts -->
@@ -867,52 +867,78 @@
             if (secondarySheetId === id) setSecondarySheetId(fallbackId);
         };
 
-        const renderPane = (sheetId, paneType) => {
-            const sheet = getSheet(sheetId);
-            const isActive = isSplitMode && activePane === paneType;
-            const displayUrl = sheet?.useProxy 
-            ? `https://corsproxy.io/?${encodeURIComponent(sheet.url)}` 
-            : sheet?.url;
-            
+        // RENDER LOGIC UPDATE: Iterate all sheets to keep them alive
+        const renderAllSheets = () => {
             return (
-            <div 
-                className={`
-                flex-1 relative h-full transition-all duration-200 overflow-hidden
-                ${isActive ? 'ring-2 ring-purple-500/50 z-10' : 'ring-0'}
-                ${isSplitMode && paneType === 'primary' ? 'border-r border-white/10' : ''}
-                `}
-                onClick={() => isSplitMode && setActivePane(paneType)}
-            >
-                {isSplitMode && !isActive && (
-                <div className="absolute inset-0 z-20 bg-black/10 hover:bg-transparent cursor-pointer transition-colors" />
-                )}
+                <div className="flex-1 relative w-full h-full bg-[#0f0f12] overflow-hidden">
+                    {sheets.map(sheet => {
+                        const isPrimary = sheet.id === primarySheetId;
+                        const isSecondary = isSplitMode && sheet.id === secondarySheetId;
+                        const isVisible = isPrimary || isSecondary;
 
-                {sheet?.url ? (
-                <iframe 
-                    src={displayUrl}
-                    title={sheet.name}
-                    className="w-full h-full border-none bg-white"
-                    allowFullScreen
-                />
-                ) : (
-                <div className="flex flex-col items-center justify-center h-full text-slate-500 bg-[#0f0f12]">
-                    <Globe size={48} className="mb-4 opacity-50" />
-                    <p>No URL configured for {sheet?.name || 'this sheet'}.</p>
-                    <button 
-                    onClick={(e) => { 
-                        e.stopPropagation();
-                        if (sheet) {
-                        setEditingSheet(sheet); 
-                        setIsEditing(true);
+                        // Calculate position
+                        let positionClass = 'hidden';
+                        if (isPrimary) {
+                            positionClass = isSplitMode ? 'left-0 w-1/2 block' : 'left-0 w-full block';
+                        } else if (isSecondary) {
+                            positionClass = 'left-1/2 w-1/2 block';
                         }
-                    }}
-                    className="mt-4 px-4 py-2 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 rounded-lg transition-colors text-sm font-medium relative z-30"
-                    >
-                    Add URL
-                    </button>
+
+                        // Determine pane type for interaction
+                        const paneType = isPrimary ? 'primary' : 'secondary';
+                        const isActive = activePane === paneType;
+                        const displayUrl = sheet?.useProxy 
+                            ? `https://corsproxy.io/?${encodeURIComponent(sheet.url)}` 
+                            : sheet?.url;
+
+                        return (
+                            <div 
+                                key={sheet.id}
+                                className={`absolute top-0 bottom-0 h-full transition-all duration-200 bg-[#0f0f12] ${positionClass} ${isActive ? 'z-10' : 'z-0'}`}
+                                onClick={() => isSplitMode && setActivePane(paneType)}
+                            >
+                                {/* Active Indicator Border */}
+                                {isActive && isSplitMode && (
+                                    <div className="absolute inset-0 border-2 border-purple-500/50 pointer-events-none z-30"></div>
+                                )}
+                                
+                                {/* Right Border for Primary Split */}
+                                {isPrimary && isSplitMode && (
+                                    <div className="absolute right-0 top-0 bottom-0 w-[1px] bg-white/10 z-20 pointer-events-none"></div>
+                                )}
+
+                                {/* Overlay for Inactive Pane */}
+                                {isSplitMode && !isActive && (
+                                    <div className="absolute inset-0 z-20 bg-black/10 hover:bg-transparent cursor-pointer transition-colors" />
+                                )}
+
+                                {sheet.url ? (
+                                    <iframe 
+                                        src={displayUrl}
+                                        title={sheet.name}
+                                        className="w-full h-full border-none bg-white"
+                                        allowFullScreen
+                                    />
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full text-slate-500 bg-[#0f0f12]">
+                                        <Globe size={48} className="mb-4 opacity-50" />
+                                        <p>No URL configured for {sheet.name}.</p>
+                                        <button 
+                                            onClick={(e) => { 
+                                                e.stopPropagation();
+                                                setEditingSheet(sheet); 
+                                                setIsEditing(true);
+                                            }}
+                                            className="mt-4 px-4 py-2 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 rounded-lg transition-colors text-sm font-medium relative z-30"
+                                        >
+                                            Add URL
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
-                )}
-            </div>
             );
         };
 
@@ -972,10 +998,8 @@
                 </div>
             </div>
 
-            <div className="flex-1 relative w-full h-full bg-[#0f0f12] flex flex-row">
-                {renderPane(primarySheetId, 'primary')}
-                {isSplitMode && renderPane(secondarySheetId, 'secondary')}
-            </div>
+            {/* Main Content Area - Render All Sheets Logic */}
+            {renderAllSheets()}
 
             {isEditing && editingSheet && (
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center modal-content">
@@ -1467,31 +1491,31 @@
             {/* Main Content Area */}
             <div className="flex-1 bg-[#050507] overflow-hidden flex flex-col relative">
                 <div className="flex-1 z-10 h-full">
-                    {activeTab === 'Spreadsheets' ? (
-                    <SpreadsheetModule />
-                    ) : activeTab === 'Sales' ? (
-                    <SalesSheetModule url={salesSheetUrl} />
-                    ) : activeTab === 'Settings' ? (
-                    <SettingsModule 
-                        models={models} 
-                        setModels={setModels} 
-                        currentRingtone={ringtone}
-                        setRingtone={setRingtone}
-                    />
-                    ) : activeTab === 'Analytics' ? (
-                    <AnalyticsModule models={models} setModels={setModels} />
-                    ) : activeTab === 'Notes' ? (
-                    <NotesModule />
-                    ) : (
-                    <div className="h-full flex flex-col items-center justify-center">
-                        <div className="p-6 rounded-full bg-white/5 mb-6">
-                        {navItems.find(i => i.id === activeTab)?.icon({ size: 48, className: "text-slate-600 opacity-50" }) || <div />}
-                        </div>
-                        <h2 className="text-xl font-light text-slate-400">
-                        {activeTab} Module
-                        </h2>
+                    {/* Render All Modules, but hide inactive ones */}
+                    <div className="w-full h-full" style={{ display: activeTab === 'Spreadsheets' ? 'block' : 'none' }}>
+                        <SpreadsheetModule />
                     </div>
-                    )}
+                    
+                    <div className="w-full h-full" style={{ display: activeTab === 'Sales' ? 'block' : 'none' }}>
+                        <SalesSheetModule url={salesSheetUrl} />
+                    </div>
+
+                    <div className="w-full h-full" style={{ display: activeTab === 'Analytics' ? 'block' : 'none' }}>
+                        <AnalyticsModule models={models} setModels={setModels} />
+                    </div>
+
+                    <div className="w-full h-full" style={{ display: activeTab === 'Notes' ? 'block' : 'none' }}>
+                        <NotesModule />
+                    </div>
+
+                    <div className="w-full h-full" style={{ display: activeTab === 'Settings' ? 'block' : 'none' }}>
+                        <SettingsModule 
+                            models={models} 
+                            setModels={setModels} 
+                            currentRingtone={ringtone}
+                            setRingtone={setRingtone}
+                        />
+                    </div>
                 </div>
             </div>
 
